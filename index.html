@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sistem QA dan Bug Aplikasi</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:Arial,Helvetica,sans-serif;background:#eef2f7;color:#1e293b;line-height:1.55}
+header{background:#1e3a5f;color:#fff;padding:22px 20px}
+header h1{font-size:24px}
+header p{color:#cbd5e1;font-size:14px;margin-top:4px}
+nav{background:#243b53;position:sticky;top:0;z-index:10;display:flex;flex-wrap:wrap;gap:4px;padding:8px 12px}
+nav button{background:transparent;border:0;color:#dbeafe;padding:10px 14px;border-radius:8px;cursor:pointer;font-size:14px;font-weight:700}
+nav button:hover{background:#334155}
+nav button.active{background:#2563eb;color:#fff}
+main{max-width:1100px;margin:20px auto;padding:0 16px 40px}
+section.tab{display:none}
+section.tab.active{display:block}
+.card{background:#fff;border:1px solid #dbe3ee;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+h2{font-size:21px;margin-bottom:10px;color:#1e3a5f}
+h3{font-size:17px;margin:14px 0 8px;color:#1e3a5f}
+h4{font-size:15px;margin:10px 0 6px}
+label{display:block;font-size:13px;font-weight:700;margin:10px 0 4px}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;font-family:inherit;background:#fff}
+textarea{min-height:70px;resize:vertical}
+button.btn{background:#2563eb;color:#fff;border:0;padding:9px 15px;border-radius:8px;cursor:pointer;font-weight:700;font-size:14px;margin:6px 6px 0 0}
+button.btn:hover{background:#1d4ed8}
+button.btn.secondary{background:#64748b}
+button.btn.danger{background:#dc2626}
+button.btn.success{background:#16a34a}
+button.btn.small{padding:6px 10px;font-size:12px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px}
+.stat{background:#f1f5f9;border-radius:10px;padding:14px;text-align:center}
+.stat b{font-size:26px;display:block;color:#1e3a5f}
+.stat span{font-size:13px;color:#475569}
+.badge{display:inline-block;padding:3px 9px;border-radius:999px;font-size:12px;font-weight:700;background:#dbeafe;color:#1e40af}
+.badge.red{background:#fee2e2;color:#991b1b}.badge.green{background:#dcfce7;color:#166534}.badge.amber{background:#fef3c7;color:#92400e}.badge.grey{background:#e2e8f0;color:#334155}
+.item{border:1px solid #e2e8f0;border-radius:10px;padding:12px;margin-bottom:10px}
+.item a{color:#2563eb;word-break:break-all}
+.muted{color:#64748b;font-size:13px}
+.progress{height:14px;background:#e2e8f0;border-radius:999px;overflow:hidden}
+.progress>div{height:100%;background:#2563eb}
+.ring{width:130px;height:130px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:10px auto;font-size:26px;font-weight:800;color:#1e3a5f;background:conic-gradient(#2563eb var(--p,0%),#e2e8f0 0)}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{border:1px solid #dbe3ee;padding:8px;text-align:left;vertical-align:top}
+th{background:#f1f5f9}
+.check{display:flex;gap:8px;align-items:flex-start;margin:6px 0}
+.check input{width:auto;margin-top:4px}
+.status-btns{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.status-btns button{border:1px solid #cbd5e1;background:#fff;padding:6px 10px;border-radius:999px;cursor:pointer;font-size:12px;font-weight:700}
+.status-btns button.on{background:#2563eb;color:#fff;border-color:#2563eb}
+.status-btns button.on.fail{background:#dc2626;border-color:#dc2626}
+.notice{background:#fffbeb;border:1px solid #fcd34d;border-radius:10px;padding:12px;margin-bottom:14px;font-size:14px}
+@media(max-width:640px){header h1{font-size:20px}nav button{flex:1 1 45%}}
+</style>
+</head>
+<body>
+<header>
+<h1>Sistem QA dan Bug Aplikasi</h1>
+<p>Pengujian manual &amp; otomatis, checklist, laporan per sesi, dan Agen AI — data tersimpan di browser ini (localStorage).</p>
+</header>
+<nav id="tabs">
+<button data-tab="ringkasan" class="active">Ringkasan</button>
+<button data-tab="proyek">Proyek</button>
+<button data-tab="kasus">Kasus Uji</button>
+<button data-tab="sesi">Sesi &amp; Checklist</button>
+<button data-tab="bug">Bug</button>
+<button data-tab="agen">Agen AI</button>
+<button data-tab="roadmap">Roadmap</button>
+</nav>
+<main>
+
+<!-- RINGKASAN -->
+<section id="tab-ringkasan" class="tab active">
+<div class="card"><h2>Ringkasan</h2>
+<p class="muted">Mulai dari keadaan kosong. Tambahkan proyek, kasus uji, lalu jalankan sesi untuk melihat angka di sini.</p>
+<div class="grid" id="summaryStats"></div>
+</div>
+<div class="card"><h3>Bug Terbaru</h3><div id="recentBugs"><p class="muted">Belum ada bug.</p></div></div>
+<div class="card"><h3>Memulai</h3><ol style="margin-left:20px"><li>Tambah proyek di tab <b>Proyek</b> beserta alamat website online dan lokalnya.</li><li>Tambah kasus uji di tab <b>Kasus Uji</b>.</li><li>Buat sesi di tab <b>Sesi &amp; Checklist</b>, jalankan checklist, lalu unduh laporannya.</li><li>Laporkan bug yang gagal, dan pantau di tab <b>Bug</b>.</li></ol>
+<button class="btn danger" onclick="if(confirm('Hapus SEMUA data?')){localStorage.removeItem(KEY);state=defaultState();save();renderAll();}">Hapus Semua Data</button>
+</div>
+</section>
+
+<!-- PROYEK -->
+<section id="tab-proyek" class="tab">
+<div class="card"><h2>Proyek</h2>
+<form id="projectForm">
+<input type="hidden" id="pId">
+<label>Nama proyek *</label><input id="pName" required placeholder="Contoh: TokoKu">
+<label>Deskripsi</label><textarea id="pDesc" placeholder="Deskripsi singkat proyek"></textarea>
+<label>Alamat website online</label><input id="pOnline" placeholder="https://tokoku.com (skema boleh kosong)">
+<label>Alamat website lokal</label><input id="pLocal" placeholder="http://localhost:3000">
+<button class="btn" type="submit">Simpan Proyek</button>
+<button class="btn secondary" type="button" onclick="resetProjectForm()">Batal / Baru</button>
+</form></div>
+<div id="projectList"></div>
+</section>
+
+<!-- KASUS UJI -->
+<section id="tab-kasus" class="tab">
+<div class="card"><h2>Kasus Uji</h2>
+<form id="caseForm">
+<input type="hidden" id="cId">
+<label>Proyek *</label><select id="cProject" required></select>
+<label>Jenis *</label><select id="cType"><option value="Manual">Manual</option><option value="Otomatis">Otomatis</option></select>
+<label>Modul *</label><input id="cModule" required placeholder="Contoh: Login, Checkout, Kasir">
+<label>Judul kasus uji *</label><input id="cTitle" required placeholder="Contoh: Login dengan password salah menampilkan pesan error">
+<label>Preconditions</label><textarea id="cPre" placeholder="Syarat sebelum pengujian, satu baris per syarat"></textarea>
+<label>Langkah-langkah</label><textarea id="cSteps" placeholder="Satu langkah per baris"></textarea>
+<label>Hasil yang diharapkan</label><textarea id="cExpected" placeholder="Hasil yang diharapkan"></textarea>
+<label>Referensi skrip (untuk kasus Otomatis)</label><input id="cScript" placeholder="Contoh: tests/login.test.js atau test_login.py">
+<button class="btn" type="submit">Simpan Kasus Uji</button>
+<button class="btn secondary" type="button" onclick="resetCaseForm()">Batal / Baru</button>
+</form></div>
+<div id="caseList"></div>
+</section>
+
+<!-- SESI -->
+<section id="tab-sesi" class="tab">
+<div class="card"><h2>Sesi &amp; Checklist</h2>
+<form id="sessionForm">
+<label>Proyek *</label><select id="sProject" required onchange="renderSessionCaseChoices()"></select>
+<label>Nama sesi *</label><input id="sName" required placeholder="Contoh: Sesi Uji Login v1.0">
+<label>Lingkungan</label><select id="sEnv"><option value="online">Online</option><option value="lokal">Lokal</option></select>
+<p class="muted" id="sEnvInfo"></p>
+<label>Pilih kasus uji</label><div id="sCaseChoices"><p class="muted">Pilih proyek dulu.</p></div>
+<button class="btn" type="submit">Buat Sesi</button>
+</form></div>
+<div id="sessionList"></div>
+<div id="sessionReport"></div>
+</section>
+
+<!-- BUG -->
+<section id="tab-bug" class="tab">
+<div class="card"><h2>Bug</h2>
+<p class="muted">Status: Terbuka &rarr; Dikerjakan &rarr; Diperbaiki &rarr; Terverifikasi &rarr; Ditutup.</p>
+<form id="bugForm">
+<input type="hidden" id="bId">
+<label>Judul bug *</label><input id="bTitle" required placeholder="Contoh: Tombol checkout tidak merespons">
+<label>Proyek</label><select id="bProject"></select>
+<label>Modul</label><input id="bModule" placeholder="Contoh: Checkout">
+<label>Tingkat keparahan</label><select id="bSeverity"><option>Rendah</option><option>Sedang</option><option>Tinggi</option><option>Kritis</option></select>
+<label>Deskripsi</label><textarea id="bDesc"></textarea>
+<label>Langkah reproduksi</label><textarea id="bSteps" placeholder="Satu langkah per baris"></textarea>
+<label>Status</label><select id="bStatus"><option>Terbuka</option><option>Dikerjakan</option><option>Diperbaiki</option><option>Terverifikasi</option><option>Ditutup</option></select>
+<button class="btn" type="submit">Simpan Bug</button>
+<button class="btn secondary" type="button" onclick="resetBugForm()">Batal / Baru</button>
+</form></div>
+<div id="bugList"></div>
+</section>
+
+<!-- AGEN AI -->
+<section id="tab-agen" class="tab">
+<div class="card"><h2>Agen AI</h2>
+<div class="notice"><b>Penting:</b> Agen ini <b>tidak mengedit kode langsung</b> di website atau repository. Agen hanya membaca data yang tersimpan di aplikasi ini, memeriksa alamat website secara read-only, dan memberikan analisis serta rekomendasi. Perbaikan kode tetap dilakukan oleh manusia.</div>
+<div class="item">
+<b>Agen QA-1 (@agen-qa)</b> <span class="badge" id="agentStatusBadge">Aktif</span><br>
+<span class="muted">Peran: Analis program &amp; perbaikan bug otomatis</span><br><br>
+<label>Status akun</label>
+<select id="agentActive" onchange="saveAgentSettings()"><option value="aktif">Aktif</option><option value="jeda">Dijeda</option></select>
+<label>Mode</label>
+<select id="agentMode" onchange="saveAgentSettings()"><option value="offline">Offline — analisis data tersimpan</option><option value="online">Online — cek read-only alamat website</option><option value="gabungan">Gabungan — offline + online</option></select>
+<label>Target</label><select id="agentTarget" onchange="saveAgentSettings()"></select>
+<button class="btn" onclick="runAgent('offline')">Jalankan Analisis Offline</button>
+<button class="btn secondary" onclick="runAgent('online')">Cek Online (Read-Only)</button>
+<button class="btn secondary" onclick="runAgent('gabungan')">Jalankan Gabungan</button>
+</div>
+<div id="agentResult"></div>
+<div class="card"><h3>Riwayat Tugas Agen</h3><div id="agentHistory"><p class="muted">Belum ada tugas agen.</p></div></div>
+</div>
+</section>
+
+<!-- ROADMAP -->
+<section id="tab-roadmap" class="tab">
+<div class="card"><h2>Roadmap Pengujian QA Manual</h2>
+<p class="muted">8 fase berurutan. Centang checklist tiap fase — progress tersimpan otomatis di browser ini.</p>
+<div class="progress"><div id="roadmapBar" style="width:0%"></div></div>
+<p id="roadmapProgressText" style="margin-top:6px;font-weight:700"></p>
+<button class="btn" onclick="downloadRoadmap()">Unduh Roadmap (.txt)</button>
+</div>
+<div id="roadmapList"></div>
+<div class="card"><h3>8 Jenis Pengujian Manual dan Kapan Dipakai</h3><div style="overflow-x:auto"><table>
+<tr><th>Jenis</th><th>Kapan dipakai</th></tr>
+<tr><td>Pengujian Fungsional</td><td>Memastikan setiap fitur berjalan sesuai kebutuhan.</td></tr>
+<tr><td>Pengujian UI / Antarmuka</td><td>Memeriksa tampilan, layout, dan konsistensi desain.</td></tr>
+<tr><td>Pengujian Usability</td><td>Memastikan aplikasi mudah dipakai pengguna awam.</td></tr>
+<tr><td>Pengujian Kompatibilitas</td><td>Di berbagai browser, perangkat, dan ukuran layar.</td></tr>
+<tr><td>Pengujian Regresi</td><td>Setelah ada perbaikan atau fitur baru, pastikan yang lama tidak rusak.</td></tr>
+<tr><td>Pengujian Smoke</td><td>Pemeriksaan cepat: apakah build layak diuji lebih lanjut.</td></tr>
+<tr><td>Pengujian Sanity</td><td>Pemeriksaan cepat pada satu fitur setelah perbaikan kecil.</td></tr>
+<tr><td>Pengujian Eksploratori</td><td>Menjelajah aplikasi tanpa skrip kaku untuk menemukan bug tak terduga.</td></tr>
+</table></div></div>
+<div class="card"><h3>Entry / Exit Criteria</h3>
+<h4>Entry Criteria (boleh mulai menguji)</h4><ul style="margin-left:20px"><li>Kebutuhan dan ruang lingkup sudah jelas.</li><li>Lingkungan uji dan data uji sudah siap.</li><li>Build/aplikasi sudah tersedia dan bisa dibuka.</li><li>Kasus uji sudah ditulis dan disetujui.</li></ul>
+<h4>Exit Criteria (boleh selesai / rilis)</h4><ul style="margin-left:20px"><li>Semua kasus uji penting sudah dieksekusi.</li><li>Tidak ada bug Kritis atau Tinggi yang masih Terbuka.</li><li>Bug yang diperbaiki sudah di-retest dan Terverifikasi.</li><li>Laporan sesi sudah dibuat dan keputusan rilis sudah dicatat.</li></ul></div>
+<div class="card"><h3>Kesalahan Umum Pemula</h3><ul style="margin-left:20px"><li>Menguji tanpa rencana dan tanpa kasus uji tertulis.</li><li>Tidak mencatat langkah reproduksi bug dengan lengkap.</li><li>Hanya menguji jalur sukses, tidak menguji jalur gagal.</li><li>Tidak melakukan retest setelah bug diperbaiki.</li><li>Mencampur status bug — misalnya menutup bug yang belum diverifikasi.</li><li>Tidak menyimpan bukti (screenshot / pesan error).</li></ul></div>
+</section>
+
+</main>
+<script>
+"use strict";
+const KEY='qa-bug-app-v1';
+function defaultState(){return{projects:[],testCases:[],sessions:[],bugs:[],roadmap:{},agent:{active:'aktif',mode:'gabungan',target:'all'},agentHistory:[],seq:1}}
+let state=defaultState();
+try{const raw=localStorage.getItem(KEY);if(raw){const p=JSON.parse(raw);if(p&&typeof p==='object'){state=Object.assign(defaultState(),p);state.agent=Object.assign(defaultState().agent,p.agent||{});}}}catch(e){}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(state))}catch(e){alert('Gagal menyimpan ke localStorage: '+e.message)}}
+function uid(){return 'id'+(state.seq++)+'_'+Date.now().toString(36)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function normUrl(u){if(!u)return '';u=String(u).trim();if(!u)return '';if(/^https?:\/\//i.test(u))return u;return 'https://'+u}
+function projectById(id){return state.projects.find(p=>p.id===id)}
+function caseById(id){return state.testCases.find(c=>c.id===id)}
+function fmtDate(t){try{return new Date(t).toLocaleString('id-ID')}catch(e){return ''}}
+function lines(s){return String(s||'').split('\n').map(x=>x.trim()).filter(Boolean)}
+</script>
+<script>
+"use strict";
+// Navigasi tab
+document.querySelectorAll('#tabs button').forEach(b=>b.addEventListener('click',()=>{
+document.querySelectorAll('#tabs button').forEach(x=>x.classList.remove('active'));b.classList.add('active');
+document.querySelectorAll('section.tab').forEach(s=>s.classList.remove('active'));
+document.getElementById('tab-'+b.dataset.tab).classList.add('active');
+if(b.dataset.tab==='roadmap')renderRoadmap();
+}));
+function showTab(name){document.querySelector('#tabs button[data-tab="'+name+'"]').click()}
+
+// Ringkasan
+function overallPass(){
+let total=0,pass=0;
+state.sessions.forEach(s=>s.items.forEach(it=>{if(it.status&&it.status!=='Belum'){total++;if(it.status==='Lolos')pass++}}));
+return{total:total,pass:pass,rate:total?Math.round(pass/total*100):0};
+}
+function renderSummary(){
+const o=overallPass();
+const openBugs=state.bugs.filter(b=>b.status!=='Ditutup').length;
+document.getElementById('summaryStats').innerHTML=
+'<div class="stat"><b>'+state.projects.length+'</b><span>Total Proyek</span></div>'+
+'<div class="stat"><b>'+state.testCases.length+'</b><span>Kasus Uji</span></div>'+
+'<div class="stat"><b>'+state.sessions.length+'</b><span>Sesi</span></div>'+
+'<div class="stat"><b>'+openBugs+'</b><span>Bug Terbuka</span></div>'+
+'<div class="stat"><b>'+o.rate+'%</b><span>Pass-Rate ('+o.pass+'/'+o.total+')</span></div>';
+const recent=[...state.bugs].sort((a,b)=>b.createdAt-a.createdAt).slice(0,5);
+document.getElementById('recentBugs').innerHTML=recent.length?recent.map(b=>{
+const p=projectById(b.projectId);return '<div class="item"><b>'+esc(b.title)+'</b> <span class="badge '+(b.status==='Ditutup'?'green':b.status==='Terbuka'?'red':'amber')+'">'+esc(b.status)+'</span> <span class="badge grey">'+esc(b.severity||'')+'</span><br><span class="muted">'+esc(p?p.name:'—')+' • '+esc(b.module||'')+' • '+fmtDate(b.createdAt)+'</span></div>'}).join(''):'<p class="muted">Belum ada bug.</p>';
+}
+
+// Proyek
+function resetProjectForm(){document.getElementById('projectForm').reset();document.getElementById('pId').value=''}
+document.getElementById('projectForm').addEventListener('submit',e=>{
+e.preventDefault();
+const id=document.getElementById('pId').value;
+const data={name:document.getElementById('pName').value.trim(),desc:document.getElementById('pDesc').value.trim(),online:document.getElementById('pOnline').value.trim(),local:document.getElementById('pLocal').value.trim()};
+if(!data.name)return;
+if(id){const p=projectById(id);Object.assign(p,data)}else{state.projects.push(Object.assign({id:uid(),createdAt:Date.now()},data))}
+save();resetProjectForm();renderAll();
+});
+function renderProjects(){
+const el=document.getElementById('projectList');
+el.innerHTML=state.projects.length?state.projects.map(p=>{
+const on=p.online?'<a href="'+esc(normUrl(p.online))+'" target="_blank" rel="noopener">'+esc(p.online)+'</a>':'<span class="muted">—</span>';
+const lo=p.local?'<a href="'+esc(normUrl(p.local))+'" target="_blank" rel="noopener">'+esc(p.local)+'</a>':'<span class="muted">—</span>';
+return '<div class="card"><b>'+esc(p.name)+'</b><p>'+esc(p.desc||'')+'</p><p>Online: '+on+'<br>Lokal: '+lo+'</p><button class="btn small" onclick="editProject(\''+p.id+'\')">Edit</button><button class="btn small danger" onclick="deleteProject(\''+p.id+'\')">Hapus</button></div>'}).join(''):'<div class="card"><p class="muted">Belum ada proyek. Tambahkan proyek pertama di atas.</p></div>';
+}
+function editProject(id){const p=projectById(id);if(!p)return;document.getElementById('pId').value=p.id;document.getElementById('pName').value=p.name;document.getElementById('pDesc').value=p.desc||'';document.getElementById('pOnline').value=p.online||'';document.getElementById('pLocal').value=p.local||'';window.scrollTo(0,0)}
+function deleteProject(id){if(!confirm('Hapus proyek ini? Kasus uji dan bug terkait tetap ada tapi proyeknya hilang.'))return;state.projects=state.projects.filter(p=>p.id!==id);save();renderAll()}
+
+// Kasus Uji
+function resetCaseForm(){document.getElementById('caseForm').reset();document.getElementById('cId').value=''}
+document.getElementById('caseForm').addEventListener('submit',e=>{
+e.preventDefault();
+const id=document.getElementById('cId').value;
+const data={projectId:document.getElementById('cProject').value,type:document.getElementById('cType').value,module:document.getElementById('cModule').value.trim(),title:document.getElementById('cTitle').value.trim(),pre:document.getElementById('cPre').value,steps:document.getElementById('cSteps').value,expected:document.getElementById('cExpected').value,script:document.getElementById('cScript').value.trim()};
+if(!data.title||!data.module)return;
+if(id){const c=caseById(id);Object.assign(c,data)}else{state.testCases.push(Object.assign({id:uid(),createdAt:Date.now()},data))}
+save();resetCaseForm();renderAll();
+});
+function fillProjectSelects(){
+const opts=state.projects.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join('');
+document.getElementById('cProject').innerHTML=opts||'<option value="">(belum ada proyek)</option>';
+document.getElementById('sProject').innerHTML=opts||'<option value="">(belum ada proyek)</option>';
+document.getElementById('bProject').innerHTML='<option value="">—</option>'+opts;
+}
+function renderCases(){
+const el=document.getElementById('caseList');
+el.innerHTML=state.testCases.length?state.testCases.map(c=>{
+const p=projectById(c.projectId);
+return '<div class="card"><b>'+esc(c.title)+'</b> <span class="badge">'+esc(c.type)+'</span> <span class="badge grey">'+esc(c.module)+'</span><br><span class="muted">'+esc(p?p.name:'—')+'</span>'+
+(c.pre?'<p><b>Preconditions:</b><br>'+esc(c.pre).replace(/\n/g,'<br>')+'</p>':'')+
+(c.steps?'<p><b>Langkah:</b><br>'+esc(c.steps).replace(/\n/g,'<br>')+'</p>':'')+
+(c.expected?'<p><b>Hasil yang diharapkan:</b> '+esc(c.expected)+'</p>':'')+
+(c.script?'<p><b>Referensi skrip:</b> <code>'+esc(c.script)+'</code></p>':'')+
+'<button class="btn small" onclick="editCase(\''+c.id+'\')">Edit</button><button class="btn small danger" onclick="deleteCase(\''+c.id+'\')">Hapus</button></div>'}).join(''):'<div class="card"><p class="muted">Belum ada kasus uji.</p></div>';
+}
+function editCase(id){const c=caseById(id);if(!c)return;document.getElementById('cId').value=c.id;document.getElementById('cProject').value=c.projectId;document.getElementById('cType').value=c.type;document.getElementById('cModule').value=c.module;document.getElementById('cTitle').value=c.title;document.getElementById('cPre').value=c.pre||'';document.getElementById('cSteps').value=c.steps||'';document.getElementById('cExpected').value=c.expected||'';document.getElementById('cScript').value=c.script||'';showTab('kasus')}
+function deleteCase(id){if(!confirm('Hapus kasus uji ini?'))return;state.testCases=state.testCases.filter(c=>c.id!==id);save();renderAll()}
+</script>
+<script>
+"use strict";
+// Sesi & Checklist
+function renderSessionCaseChoices(){
+const pid=document.getElementById('sProject').value;
+const p=projectById(pid);
+const env=document.getElementById('sEnv').value;
+document.getElementById('sEnvInfo').textContent=p?('Lingkungan '+(env==='online'?'online':'lokal')+': '+(env==='online'?(p.online||'(alamat online belum diisi)'):(p.local||'(alamat lokal belum diisi)'))):'';
+const cases=state.testCases.filter(c=>c.projectId===pid);
+document.getElementById('sCaseChoices').innerHTML=cases.length?cases.map(c=>'<label class="check"><input type="checkbox" class="sCase" value="'+c.id+'"> <span><b>'+esc(c.title)+'</b> <span class="badge grey">'+esc(c.module)+'</span> <span class="badge">'+esc(c.type)+'</span></span></label>').join(''):'<p class="muted">Belum ada kasus uji untuk proyek ini. Tambah dulu di tab Kasus Uji.</p>';
+}
+document.getElementById('sEnv').addEventListener('change',renderSessionCaseChoices);
+document.getElementById('sessionForm').addEventListener('submit',e=>{
+e.preventDefault();
+const pid=document.getElementById('sProject').value;
+const name=document.getElementById('sName').value.trim();
+if(!pid||!name)return;
+const chosen=[...document.querySelectorAll('.sCase:checked')].map(x=>x.value);
+if(!chosen.length){alert('Pilih minimal satu kasus uji.');return}
+const items=chosen.map(id=>({caseId:id,status:'Belum',note:'',duration:''}));
+state.sessions.push({id:uid(),projectId:pid,name:name,env:document.getElementById('sEnv').value,createdAt:Date.now(),items:items});
+save();document.getElementById('sessionForm').reset();renderAll();showTab('sesi');
+});
+function sessionPass(s){const done=s.items.filter(i=>i.status&&i.status!=='Belum');const pass=s.items.filter(i=>i.status==='Lolos').length;return{total:done.length,pass:pass,rate:done.length?Math.round(pass/done.length*100):0}}
+function renderSessions(){
+const el=document.getElementById('sessionList');
+el.innerHTML=state.sessions.length?state.sessions.map(s=>{
+const p=projectById(s.projectId);const r=sessionPass(s);
+const envUrl=p?(s.env==='online'?p.online:p.local):'';
+return '<div class="card"><b>'+esc(s.name)+'</b> <span class="badge">'+esc(s.env)+'</span> <span class="badge grey">'+esc(p?p.name:'—')+'</span><br><span class="muted">'+fmtDate(s.createdAt)+' • Pass-rate: '+r.rate+'% ('+r.pass+'/'+r.total+')'+(envUrl?' • <a href="'+esc(normUrl(envUrl))+'" target="_blank" rel="noopener">'+esc(envUrl)+'</a>':'')+'</span>'+
+s.items.map((it,idx)=>{
+const c=caseById(it.caseId);if(!c)return '';
+const statuses=['Lolos','Gagal','Terblokir','Dilewati'];
+return '<div class="item"><b>'+esc(c.title)+'</b> <span class="badge grey">'+esc(c.module)+'</span><br><span class="muted">'+esc(c.type)+(c.script?' • Skrip: '+esc(c.script):'')+'</span>'+
+(c.steps?'<p class="muted">Langkah: '+esc(c.steps).replace(/\n/g,' &gt; ')+'</p>':'')+
+'<div class="status-btns">'+statuses.map(st=>'<button class="'+(it.status===st?'on'+(st==='Gagal'?' fail':''):'')+'" onclick="setItemStatus(\''+s.id+'\','+idx+',\''+st+'\')">'+st+'</button>').join('')+'</div>'+
+'<label>Catatan</label><input value="'+esc(it.note||'').replace(/"/g,'&quot;')+'" placeholder="Catatan hasil pengujian" onchange="setItemNote(\''+s.id+'\','+idx+',this.value)">'+
+'<label>Durasi (menit)</label><input value="'+esc(it.duration||'')+'" placeholder="Contoh: 5" onchange="setItemDuration(\''+s.id+'\','+idx+',this.value)">'+
+(it.status==='Gagal'?'<br><button class="btn small danger" onclick="bugFromSession(\''+s.id+'\','+idx+')">Buat Bug dari Item Ini</button>':'')+
+'</div>'}).join('')+
+'<button class="btn small" onclick="showSessionReport(\''+s.id+'\')">Lihat Laporan Sesi</button> <button class="btn small secondary" onclick="downloadSessionReport(\''+s.id+'\')">Unduh Laporan (.txt)</button> <button class="btn small danger" onclick="deleteSession(\''+s.id+'\')">Hapus Sesi</button></div>'}).join(''):'<div class="card"><p class="muted">Belum ada sesi. Buat sesi dari proyek dan kasus uji di atas.</p></div>';
+}
+function setItemStatus(sid,idx,st){const s=state.sessions.find(x=>x.id===sid);if(!s)return;s.items[idx].status=st;save();renderAll()}
+function setItemNote(sid,idx,v){const s=state.sessions.find(x=>x.id===sid);if(!s)return;s.items[idx].note=v;save()}
+function setItemDuration(sid,idx,v){const s=state.sessions.find(x=>x.id===sid);if(!s)return;s.items[idx].duration=v;save()}
+function deleteSession(id){if(!confirm('Hapus sesi ini?'))return;state.sessions=state.sessions.filter(s=>s.id!==id);document.getElementById('sessionReport').innerHTML='';save();renderAll()}
+function bugFromSession(sid,idx){const s=state.sessions.find(x=>x.id===sid);if(!s)return;const it=s.items[idx];const c=caseById(it.caseId);document.getElementById('bTitle').value=c?('Gagal: '+c.title):'Bug dari sesi';document.getElementById('bProject').value=s.projectId;document.getElementById('bModule').value=c?c.module:'';document.getElementById('bDesc').value=it.note||'';document.getElementById('bSteps').value=c?c.steps:'';document.getElementById('bStatus').value='Terbuka';showTab('bug');alert('Form bug sudah terisi dari item yang gagal. Lengkapi lalu klik Simpan Bug.')}
+function sessionReportText(s){
+const p=projectById(s.projectId);const r=sessionPass(s);
+const byMod={};s.items.forEach(it=>{const c=caseById(it.caseId);if(!c)return;byMod[c.module]=byMod[c.module]||{total:0,pass:0};if(it.status&&it.status!=='Belum'){byMod[c.module].total++;if(it.status==='Lolos')byMod[c.module].pass++}});
+const bugs=state.bugs.filter(b=>b.projectId===s.projectId);
+let t='LAPORAN SESI PENGUJIAN\n====================\n';
+t+='Sesi: '+s.name+'\nProyek: '+(p?p.name:'—')+'\nLingkungan: '+s.env+'\nTanggal: '+fmtDate(s.createdAt)+'\n\n';
+t+='PASS-RATE: '+r.rate+'% ('+r.pass+' lolos dari '+r.total+' item yang dieksekusi)\n\nBREAKDOWN PER MODUL:\n';
+Object.keys(byMod).forEach(m=>{const b=byMod[m];t+='- '+m+': '+(b.total?Math.round(b.pass/b.total*100):0)+'% ('+b.pass+'/'+b.total+')\n'});
+t+='\nITEM:\n';s.items.forEach(it=>{const c=caseById(it.caseId);t+='- ['+(it.status||'Belum')+'] '+(c?c.title:'(kasus dihapus)')+(it.note?' — '+it.note:'')+(it.duration?' ('+it.duration+' mnt)':'')+'\n'});
+t+='\nBUG SESI / PROYEK ('+bugs.length+'):\n';bugs.forEach(b=>{t+='- ['+b.status+'] ['+b.severity+'] '+b.title+'\n'});
+const openCrit=bugs.filter(b=>b.status!=='Ditutup'&&(b.severity==='Kritis'||b.severity==='Tinggi')).length;
+t+='\nKESIMPULAN KESIAPAN RILIS:\n';
+if(r.total===0)t+='Belum ada item yang dieksekusi — belum bisa diputuskan.\n';
+else if(openCrit>0)t+='BELUM SIAP RILIS — masih ada '+openCrit+' bug Kritis/Tinggi yang belum ditutup.\n';
+else if(r.rate>=90)t+='SIAP RILIS dengan catatan — pass-rate '+r.rate+'% dan tidak ada bug Kritis/Tinggi terbuka.\n';
+else if(r.rate>=70)t+='SIAP DENGAN SYARAT — pass-rate '+r.rate+'%, perbaiki dulu bug yang gagal sebelum rilis.\n';
+else t+='BELUM SIAP RILIS — pass-rate hanya '+r.rate+'%.\n';
+return t;
+}
+function showSessionReport(sid){const s=state.sessions.find(x=>x.id===sid);if(!s)return;const r=sessionPass(s);
+const byMod={};s.items.forEach(it=>{const c=caseById(it.caseId);if(!c)return;byMod[c.module]=byMod[c.module]||{total:0,pass:0};if(it.status&&it.status!=='Belum'){byMod[c.module].total++;if(it.status==='Lolos')byMod[c.module].pass++}});
+const bugs=state.bugs.filter(b=>b.projectId===s.projectId);
+const openCrit=bugs.filter(b=>b.status!=='Ditutup'&&(b.severity==='Kritis'||b.severity==='Tinggi')).length;
+let concl=r.total===0?'Belum ada item yang dieksekusi — belum bisa diputuskan.':openCrit>0?'BELUM SIAP RILIS — masih ada '+openCrit+' bug Kritis/Tinggi yang belum ditutup.':r.rate>=90?'SIAP RILIS dengan catatan — pass-rate '+r.rate+'% dan tidak ada bug Kritis/Tinggi terbuka.':r.rate>=70?'SIAP DENGAN SYARAT — pass-rate '+r.rate+'%, perbaiki dulu bug yang gagal sebelum rilis.':'BELUM SIAP RILIS — pass-rate hanya '+r.rate+'%.';
+document.getElementById('sessionReport').innerHTML='<div class="card"><h3>Laporan: '+esc(s.name)+'</h3><div class="ring" style="--p:'+r.rate+'%">'+r.rate+'%</div><p style="text-align:center">Pass-rate: '+r.pass+' lolos dari '+r.total+' item dieksekusi</p><h4>Breakdown per Modul</h4>'+(Object.keys(byMod).map(m=>{const b=byMod[m];return '<p>'+esc(m)+': '+(b.total?Math.round(b.pass/b.total*100):0)+'% ('+b.pass+'/'+b.total+')</p>'}).join('')||'<p class="muted">Belum ada modul.</p>')+'<h4>Bug Sesi / Proyek</h4>'+(bugs.map(b=>'<p>['+esc(b.status)+'] ['+esc(b.severity)+'] '+esc(b.title)+'</p>').join('')||'<p class="muted">Tidak ada bug.</p>')+'<h4>Kesimpulan Kesiapan Rilis</h4><p><b>'+esc(concl)+'</b></p><button class="btn" onclick="downloadSessionReport(\''+s.id+'\')">Unduh Laporan (.txt)</button></div>';
+const sr=document.getElementById('sessionReport');if(sr&&typeof sr.scrollIntoView==='function'){sr.scrollIntoView({behavior:'smooth'})}
+}
+function downloadText(filename,text){const blob=new Blob([text],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function downloadSessionReport(sid){const s=state.sessions.find(x=>x.id===sid);if(!s)return;downloadText('laporan-'+s.name.replace(/[^a-z0-9]+/gi,'-')+'.txt',sessionReportText(s))}
+</script>
+<script>
+"use strict";
+// Bug
+function resetBugForm(){document.getElementById('bugForm').reset();document.getElementById('bId').value=''}
+const BUG_ORDER=['Terbuka','Dikerjakan','Diperbaiki','Terverifikasi','Ditutup'];
+document.getElementById('bugForm').addEventListener('submit',e=>{
+e.preventDefault();
+const id=document.getElementById('bId').value;
+const data={title:document.getElementById('bTitle').value.trim(),projectId:document.getElementById('bProject').value,module:document.getElementById('bModule').value.trim(),severity:document.getElementById('bSeverity').value,desc:document.getElementById('bDesc').value,steps:document.getElementById('bSteps').value,status:document.getElementById('bStatus').value};
+if(!data.title)return;
+if(id){const b=state.bugs.find(x=>x.id===id);Object.assign(b,data)}else{state.bugs.push(Object.assign({id:uid(),createdAt:Date.now()},data))}
+save();resetBugForm();renderAll();
+});
+function renderBugs(){
+const el=document.getElementById('bugList');
+el.innerHTML=state.bugs.length?[...state.bugs].sort((a,b)=>b.createdAt-a.createdAt).map(b=>{
+const p=projectById(b.projectId);const next=BUG_ORDER[(BUG_ORDER.indexOf(b.status)+1)%BUG_ORDER.length];
+return '<div class="card"><b>'+esc(b.title)+'</b> <span class="badge '+(b.status==='Ditutup'?'green':b.status==='Terbuka'?'red':'amber')+'">'+esc(b.status)+'</span> <span class="badge grey">'+esc(b.severity||'')+'</span><br><span class="muted">'+esc(p?p.name:'—')+' • '+esc(b.module||'')+' • '+fmtDate(b.createdAt)+'</span>'+
+(b.desc?'<p>'+esc(b.desc)+'</p>':'')+(b.steps?'<p><b>Langkah reproduksi:</b><br>'+esc(b.steps).replace(/\n/g,'<br>')+'</p>':'')+
+'<button class="btn small" onclick="advanceBug(\''+b.id+'\')">Lanjut: '+esc(next)+'</button><button class="btn small secondary" onclick="editBug(\''+b.id+'\')">Edit</button><button class="btn small danger" onclick="deleteBug(\''+b.id+'\')">Hapus</button></div>'}).join(''):'<div class="card"><p class="muted">Belum ada bug.</p></div>';
+}
+function advanceBug(id){const b=state.bugs.find(x=>x.id===id);if(!b)return;b.status=BUG_ORDER[(BUG_ORDER.indexOf(b.status)+1)%BUG_ORDER.length];save();renderAll()}
+function editBug(id){const b=state.bugs.find(x=>x.id===id);if(!b)return;document.getElementById('bId').value=b.id;document.getElementById('bTitle').value=b.title;document.getElementById('bProject').value=b.projectId||'';document.getElementById('bModule').value=b.module||'';document.getElementById('bSeverity').value=b.severity||'Sedang';document.getElementById('bDesc').value=b.desc||'';document.getElementById('bSteps').value=b.steps||'';document.getElementById('bStatus').value=b.status;showTab('bug')}
+function deleteBug(id){if(!confirm('Hapus bug ini?'))return;state.bugs=state.bugs.filter(b=>b.id!==id);save();renderAll()}
+
+// Agen AI
+function saveAgentSettings(){
+state.agent.active=document.getElementById('agentActive').value;
+state.agent.mode=document.getElementById('agentMode').value;
+state.agent.target=document.getElementById('agentTarget').value;
+save();renderAgent();
+}
+function renderAgent(){
+document.getElementById('agentActive').value=state.agent.active;
+document.getElementById('agentMode').value=state.agent.mode;
+const sel=document.getElementById('agentTarget');
+sel.innerHTML='<option value="all">Semua proyek</option>'+state.projects.map(p=>'<option value="'+p.id+'">'+esc(p.name)+'</option>').join('');
+sel.value=state.agent.target||'all';
+document.getElementById('agentStatusBadge').textContent=state.agent.active==='aktif'?'Aktif':'Dijeda';
+document.getElementById('agentHistory').innerHTML=state.agentHistory.length?[...state.agentHistory].reverse().map(h=>'<div class="item"><b>'+esc(h.title)+'</b><br><span class="muted">'+fmtDate(h.at)+'</span><p>'+esc(h.text)+'</p></div>').join(''):'<p class="muted">Belum ada tugas agen.</p>';
+}
+function agentScope(){return state.agent.target==='all'?state.projects:state.projects.filter(p=>p.id===state.agent.target)}
+function offlineAnalysis(){
+const scope=agentScope();
+const pids=scope.map(p=>p.id);
+const cases=state.agent.target==='all'?state.testCases:state.testCases.filter(c=>pids.includes(c.projectId));
+const bugs=state.agent.target==='all'?state.bugs:state.bugs.filter(b=>pids.includes(b.projectId));
+const sessions=state.agent.target==='all'?state.sessions:state.sessions.filter(s=>pids.includes(s.projectId));
+let total=0,pass=0;sessions.forEach(s=>s.items.forEach(it=>{if(it.status&&it.status!=='Belum'){total++;if(it.status==='Lolos')pass++}}));
+const rate=total?Math.round(pass/total*100):0;
+const open=bugs.filter(b=>b.status!=='Ditutup');
+const crit=open.filter(b=>b.severity==='Kritis'||b.severity==='Tinggi').length;
+let score=100;
+if(total)score=Math.round(score*0.5+rate*0.5);else score=50;
+score-=crit*10;score-=Math.max(0,open.length-crit)*3;score=Math.max(0,Math.min(100,score));
+const recs=[];
+if(!scope.length)recs.push('Tambah proyek dan alamat websitenya terlebih dahulu.');
+if(!cases.length)recs.push('Tambah kasus uji untuk setiap modul utama.');
+if(!sessions.length)recs.push('Buat dan jalankan sesi pengujian agar ada data pass-rate.');
+if(crit)recs.push('Prioritaskan '+crit+' bug Kritis/Tinggi yang masih terbuka sebelum rilis.');
+if(open.length)recs.push('Lakukan retest untuk '+open.length+' bug terbuka, lalu ubah statusnya ke Terverifikasi bila sudah benar.');
+if(rate<70&&total)recs.push('Pass-rate '+rate+'% masih rendah — periksa modul dengan kegagalan terbanyak.');
+if(!recs.length)recs.push('Kondisi terlihat baik. Lanjutkan pengujian regresi sebelum rilis.');
+const summary='Analisis offline Agen QA-1 untuk '+(state.agent.target==='all'?'semua proyek':(scope[0]?scope[0].name:'proyek yang dipilih'))+': ada '+cases.length+' kasus uji, '+sessions.length+' sesi, dan '+open.length+' bug terbuka ('+crit+' Kritis/Tinggi). Pass-rate keseluruhan '+rate+'% dari '+total+' item yang dieksekusi. Skor kesehatan '+score+'/100.';
+return{score:score,rate:rate,open:open.length,crit:crit,summary:summary,recs:recs,cases:cases.length,sessions:sessions.length};
+}
+async function runAgent(mode){
+if(state.agent.active!=='aktif'){alert('Agen QA-1 sedang dijeda. Aktifkan dulu untuk menjalankan tugas.');return}
+const effMode=mode||state.agent.mode;
+let html='<div class="card"><h3>Hasil Agen QA-1</h3>';
+let logText='';
+if(effMode==='offline'||effMode==='gabungan'){
+const a=offlineAnalysis();
+html+='<p><b>Skor kesehatan: '+a.score+'/100</b> • Pass-rate: '+a.rate+'% • Bug terbuka: '+a.open+' ('+a.crit+' Kritis/Tinggi) • Kasus uji: '+a.cases+' • Sesi: '+a.sessions+'</p><p>'+esc(a.summary)+'</p><h4>Rekomendasi</h4><ul style="margin-left:20px">'+a.recs.map(r=>'<li>'+esc(r)+'</li>').join('')+'</ul>';
+logText='Analisis offline: skor '+a.score+'/100, pass-rate '+a.rate+'%, bug terbuka '+a.open+'. '+a.summary;
+}
+if(effMode==='online'||effMode==='gabungan'){
+html+='<h4>Cek Online (Read-Only)</h4>';
+const scope=agentScope();
+if(!scope.length){html+='<p class="muted">Belum ada proyek untuk dicek.</p>';logText+=' Cek online: belum ada proyek.'}
+else{
+for(const p of scope){
+const urls=[];if(p.online)urls.push(['online',p.online]);if(p.local)urls.push(['lokal',p.local]);
+if(!urls.length){html+='<p>'+esc(p.name)+': tidak ada alamat website.</p>';continue}
+for(const pair of urls){
+const label=pair[0];const url=normUrl(pair[1]);
+let status='Tidak dapat dipastikan (diblokir CORS / tidak dapat dijangkau dari browser — ini wajar untuk cek read-only).';
+try{const ctrl=new AbortController();const t=setTimeout(()=>ctrl.abort(),5000);const res=await fetch(url,{method:'GET',mode:'no-cors',signal:ctrl.signal});clearTimeout(t);status='Terjangkau (respons diterima, mode no-cors — isi tidak dibaca).';}catch(e){status='Gagal dijangkau dari browser: '+e.message+'. Bug terkait TIDAK ditandai diperbaiki.';}
+html+='<p><b>'+esc(p.name)+' ('+label+')</b>: <a href="'+esc(url)+'" target="_blank" rel="noopener">'+esc(pair[1])+'</a><br>'+esc(status)+'</p>';
+}
+}
+html+='<p class="muted">Cek online ini hanya membaca alamat website. Tidak ada bug yang otomatis ditandai Diperbaiki — bug hanya berubah status bila sudah terbukti diperbaiki dan diverifikasi secara manual di tab Bug.</p>';
+logText+=' Cek online read-only selesai untuk '+scope.length+' proyek. Tidak ada bug yang otomatis ditandai diperbaiki.';
+}
+}
+html+='<p class="muted">Agen ini tidak mengedit kode langsung.</p></div>';
+document.getElementById('agentResult').innerHTML=html;
+state.agentHistory.push({title:'Tugas Agen QA-1 ('+effMode+')',at:Date.now(),text:logText||'Tugas selesai.'});
+save();renderAgent();
+}
+
+// Roadmap
+const ROADMAP=[
+{title:'1. Pahami Kebutuhan & Ruang Lingkup',goal:'Memahami apa yang harus diuji dan batasannya.',time:'1–2 hari',steps:['Baca kebutuhan / user story','Tanyakan hal yang belum jelas','Tentukan fitur yang masuk dan tidak masuk pengujian','Tentukan perangkat dan browser yang dipakai','Catat risiko utama'],checks:['Kebutuhan sudah dibaca','Ruang lingkup sudah ditulis','Pertanyaan sudah terjawab','Risiko sudah dicatat','Perangkat/browser sudah ditentukan'],output:'Dokumen ruang lingkup pengujian',tips:'Jangan mulai menguji sebelum ruang lingkup jelas.'},
+{title:'2. Rencana Pengujian',goal:'Menyusun rencana: apa, kapan, dan siapa yang menguji.',time:'1 hari',steps:['Tentukan jenis pengujian yang dipakai','Tentukan urutan pengujian','Tentukan kriteria selesai (exit criteria)','Bagi tugas bila ada tim','Buat jadwal pengujian'],checks:['Jenis pengujian dipilih','Urutan pengujian ditentukan','Exit criteria ditulis','Jadwal dibuat','Penanggung jawab ditentukan'],output:'Rencana pengujian',tips:'Rencana sederhana yang ditulis lebih baik daripada rencana besar yang tidak dipakai.'},
+{title:'3. Desain Kasus Uji Manual',goal:'Menulis kasus uji yang jelas dan bisa diulang orang lain.',time:'2–3 hari',steps:['Tulis kasus uji per modul','Tulis preconditions, langkah, dan hasil yang diharapkan','Sertakan kasus jalur gagal, bukan hanya jalur sukses','Kelompokkan kasus uji per modul','Periksa ulang kasus uji'],checks:['Kasus uji per modul ditulis','Preconditions ditulis','Langkah jelas dan berurutan','Hasil yang diharapkan ditulis','Kasus jalur gagal disertakan','Kasus uji diperiksa ulang','Kasus otomatis diberi referensi skrip'],output:'Daftar kasus uji di tab Kasus Uji',tips:'Satu kasus uji menguji satu hal saja.'},
+{title:'4. Siapkan Lingkungan & Data Uji',goal:'Menyiapkan tempat dan data untuk menguji.',time:'1 hari',steps:['Siapkan alamat website online dan lokal di proyek','Siapkan akun uji','Siapkan data uji (produk, pengguna, transaksi)','Pastikan lingkungan bisa dibuka','Catat versi aplikasi yang diuji'],checks:['Alamat online sudah diisi','Alamat lokal sudah diisi','Akun uji tersedia','Data uji siap','Lingkungan bisa dibuka'],output:'Lingkungan uji yang siap dipakai',tips:'Jangan menguji di data produksi.'},
+{title:'5. Eksekusi via Sesi & Checklist',goal:'Menjalankan pengujian dan mencatat hasilnya.',time:'Sesuai jumlah kasus uji',steps:['Buat sesi dari proyek dan kasus uji','Pilih lingkungan online atau lokal','Jalankan checklist per item','Isi catatan dan durasi tiap item','Tandai Lolos / Gagal / Terblokir / Dilewati'],checks:['Sesi sudah dibuat','Lingkungan sudah dipilih','Semua item sudah dieksekusi','Catatan sudah diisi','Durasi sudah dicatat','Status tiap item sudah diisi'],output:'Sesi dengan checklist lengkap',tips:'Kerjakan satu item sampai selesai sebelum pindah ke item berikutnya.'},
+{title:'6. Catat & Laporkan Bug',goal:'Mencatat bug agar bisa diperbaiki.',time:'Bersamaan dengan eksekusi',steps:['Buat bug dari item yang Gagal','Tulis judul yang jelas','Tulis langkah reproduksi','Isi tingkat keparahan dan modul','Lampirkan bukti bila ada'],checks:['Judul bug jelas','Langkah reproduksi lengkap','Tingkat keparahan diisi','Modul diisi','Bug dibuat dari item yang gagal'],output:'Daftar bug di tab Bug',tips:'Bug yang baik bisa direproduksi orang lain dari langkah yang ditulis.'},
+{title:'7. Retest & Regresi',goal:'Memastikan perbaikan benar dan tidak merusak yang lain.',time:'1–2 hari',steps:['Uji ulang bug yang sudah Diperbaiki','Ubah status ke Terverifikasi bila benar','Jalankan lagi kasus uji modul terkait (regresi)','Catat bila bug muncul kembali','Ulangi sampai tidak ada bug Kritis/Tinggi terbuka'],checks:['Bug yang diperbaiki sudah di-retest','Status bug diperbarui','Regresi modul terkait sudah dijalankan','Bug yang muncul kembali dicatat','Tidak ada bug Kritis/Tinggi terbuka'],output:'Bug Terverifikasi dan hasil regresi',tips:'Jangan menutup bug sebelum diverifikasi.'},
+{title:'8. Laporan & Keputusan Rilis',goal:'Membuat laporan dan memutuskan siap rilis atau belum.',time:'Setengah hari',steps:['Buka laporan per sesi','Periksa pass-rate dan breakdown per modul','Periksa daftar bug sesi','Tulis kesimpulan kesiapan rilis','Unduh laporan sebagai .txt'],checks:['Laporan sesi sudah dibuka','Pass-rate sudah diperiksa','Bug sesi sudah diperiksa','Kesimpulan rilis sudah ditulis','Laporan sudah diunduh'],output:'Laporan sesi (.txt) dan keputusan rilis',tips:'Keputusan rilis harus berdasarkan data, bukan perasaan.'}
+];
+function roadmapTotal(){return ROADMAP.reduce((n,f)=>n+f.checks.length,0)}
+function roadmapDone(){let n=0;ROADMAP.forEach((f,fi)=>f.checks.forEach((c,ci)=>{if(state.roadmap[fi+'_'+ci])n++}));return n}
+function renderRoadmap(){
+const total=roadmapTotal();const done=roadmapDone();const pct=total?Math.round(done/total*100):0;
+document.getElementById('roadmapBar').style.width=pct+'%';
+document.getElementById('roadmapProgressText').textContent='Progress: '+done+'/'+total+' checklist ('+pct+'%)';
+document.getElementById('roadmapList').innerHTML=ROADMAP.map((f,fi)=>{
+return '<div class="card"><h3>'+esc(f.title)+'</h3><p><b>Tujuan:</b> '+esc(f.goal)+'</p><p><b>Estimasi waktu:</b> '+esc(f.time)+'</p><h4>Langkah-langkah</h4><ol style="margin-left:20px">'+f.steps.map(s=>'<li>'+esc(s)+'</li>').join('')+'</ol><h4>Checklist</h4>'+f.checks.map((c,ci)=>'<label class="check"><input type="checkbox" '+(state.roadmap[fi+'_'+ci]?'checked':'')+' onchange="toggleRoadmap('+fi+','+ci+',this.checked)"> <span>'+esc(c)+'</span></label>').join('')+'<p><b>Output:</b> '+esc(f.output)+'</p><p><b>Tips:</b> '+esc(f.tips)+'</p></div>'}).join('');
+}
+function toggleRoadmap(fi,ci,v){state.roadmap[fi+'_'+ci]=v;save();renderRoadmap()}
+function downloadRoadmap(){
+let t='ROADMAP PENGUJIAN QA MANUAL\n===========================\nProgress: '+roadmapDone()+'/'+roadmapTotal()+'\n\n';
+ROADMAP.forEach((f,fi)=>{t+=f.title+'\nTujuan: '+f.goal+'\nEstimasi: '+f.time+'\nLangkah:\n';f.steps.forEach(s=>{t+='- '+s+'\n'});t+='Checklist:\n';f.checks.forEach((c,ci)=>{t+='['+(state.roadmap[fi+'_'+ci]?'x':' ')+'] '+c+'\n'});t+='Output: '+f.output+'\nTips: '+f.tips+'\n\n'});
+downloadText('roadmap-qa-manual.txt',t);
+}
+
+// Render semua + init
+function renderAll(){fillProjectSelects();renderSummary();renderProjects();renderCases();renderSessionCaseChoices();renderSessions();renderBugs();renderAgent();renderRoadmap()}
+renderAll();
+</script>
+</body>
+</html>
